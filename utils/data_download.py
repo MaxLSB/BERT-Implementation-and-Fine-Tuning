@@ -1,5 +1,4 @@
 import ast
-import pandas as pd
 import json
 
 # In the paper, combined_length = 512 here we take 128 because we have less data

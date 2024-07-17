@@ -1,6 +1,6 @@
 from pandas import read_csv
 from tokenizers import BertWordPieceTokenizer
-import utils.data_loader as data_loader
+from utils.data_loader import load_data
 import tqdm
 
 def create_tokenizer():
@@ -19,7 +19,7 @@ def save_tokenizer(tokenizer, save_path):
 
 def main():
     
-    dataset = data_loader.load_data('./data/processed_data.json')
+    dataset = load_data('./data/processed_data.json')
 
     # Create and train tokenizer
     tokenizer = create_tokenizer()

@@ -1,10 +1,9 @@
-from utils.tokenizer_loader import load_tokenizer
-from utils.data_loader import load_data
-
 import random
 from torch.utils.data import Dataset
+import torch
+import math
 
-class BERTPreProcessing(Dataset):
+class PreProcessing(Dataset):
     def __init__(self, dataset, tokenizer, seq_length=64):
         self.dataset = dataset
         self.tokenizer = tokenizer
@@ -44,7 +43,7 @@ class BERTPreProcessing(Dataset):
         # tokens is the corresponding tokenized sentence
         tokens = self.tokenizer(sentence, max_length=self.seq_length, truncation=True)['input_ids']
         mask_ids = [0]*len(tokens)
-        # We don't take into account the [CLS] and [SEP] tokens
+        # We don't want to mask the [CLS] and [SEP] tokens so we donc take in count the first and last token
         for i in range(1,len(tokens)-1):
             # Masking 15% of the tokens
             if random.random() < 0.15:
@@ -75,7 +74,52 @@ class BERTPreProcessing(Dataset):
         return self.dataset[index][1]
 
 
-# dataset = load_data('data/processed_data.json')
-# tokenizer = load_tokenizer('tokenizers/')
-# Dataset = BERTPreProcessing(dataset, tokenizer)
-# print(Dataset.__getitem__(0))
+class PositionalEmbedding(torch.nn.Module):
+    # d_model is the hidden size for BERT : 768 (from the article)
+    def __init__(self, d_model, max_len=64):
+        super().__init__()
+        self.d_model = d_model
+        self.max_len = max_len
+        # pe is the positional embedding of size 64x768
+        pe = torch.zeros(self.max_len, self.d_model).float()
+        pe.requires_grad = False
+        
+        for pos in range(max_len):
+            for i in range(0, d_model, 2):
+                pe[pos, i] = math.sin(pos / (10000 ** ((2 * i)/self.d_model)))
+                pe[pos, i+1] = math.cos(pos / (10000 ** ((2 * (i+1))/self.d_model)))
+        
+        self.pe = pe.unsqueeze(0)
+        
+    def forward(self, x):
+        return self.pe
+    
+    
+# Initialize the embedding vectors for all the tokens of the vocabulary
+class InputEmbedding(torch.nn.Module):
+    # embed_size is the hidden size for BERT : 768 (from the article)
+    def __init__(self, vocab_size, embed_size, seq_len=64, dropout=0.1):
+        super().__init__()
+        
+        self.vocab_size = vocab_size
+        self.embed_size = embed_size
+        self.seq_len = seq_len
+        
+        # Note : self.token(token_index) returns the embedding vector of the token_index
+        
+        # Initially all the embedding vectors weights are random and will be updated during the training process
+        # padding_ids to designate the padding tokens which will remain zeros
+        self.token = torch.nn.Embedding(vocab_size, embed_size, padding_idx=0)
+        self.segment = torch.nn.Embedding(3, embed_size, padding_idx=0)
+        self.position = PositionalEmbedding(d_model=embed_size, max_len=seq_len)
+        self.dropout = torch.nn.Dropout(dropout)
+        
+    def forward(self, sequence, segment_label):
+        # self.token(sequence) creates a tensor that contains the embedding vectors for all the tokens in the input sequence.
+        # self.token gathers the embedding vectors of all the vocabulary tokens
+        # self.segment gathers the embedding vectors of the 3 possible segment labels
+        # self.position gathers the positional embedding vectors of the 64 possible positions
+        
+        # The input embedding is the sum of the token embedding, the positional embedding and the segment embedding
+        x = self.token(sequence) + self.segment(segment_label) + self.position(sequence)
+        return self.dropout(x)

@@ -1,4 +1,3 @@
-from pandas import read_csv
 from tokenizers import BertWordPieceTokenizer
 from utils.data_loader import load_data
 import tqdm

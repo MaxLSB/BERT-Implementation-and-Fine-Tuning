@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import torch
 import math
 
-class PreProcessing(Dataset):
+class DatasetCreation(Dataset):
     def __init__(self, dataset, tokenizer, seq_length=64):
         self.dataset = dataset
         self.tokenizer = tokenizer
@@ -122,4 +122,5 @@ class InputEmbedding(torch.nn.Module):
         
         # The input embedding is the sum of the token embedding, the positional embedding and the segment embedding
         x = self.token(sequence) + self.segment(segment_label) + self.position(sequence)
+        # We apply dropout to deactivate some embedding features within the embedding vector for each token.
         return self.dropout(x)

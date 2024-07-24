@@ -2,7 +2,6 @@ import torch
 from encoder import Encoderlayer
 from utils.preProcessing import InputEmbedding
 
-# 12 Encoder layers (based on the article)
 class BERT(torch.nn.Module):
     def __init__(self, vocab_size, d_model=768, nheads=12, dropout=0.1, n_encoder_layers=12):
         super().__init__()

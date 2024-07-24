@@ -14,7 +14,7 @@ class BERTTraining:
         self.betas = betas
         self.log_freq = log_freq
 
-        # ignore_index=0: ignore the padding token
+        # ignore_index=0: ignore 'non masked' and padded tokens during loss calculation
         self.criterion = torch.nn.NLLLoss(ignore_index=0)
         self.optimizer = Adam(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=self.betas)
         

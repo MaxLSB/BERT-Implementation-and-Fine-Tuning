@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import torch
 import math
 
-class DatasetCreation(Dataset):
+class BERTDataset(Dataset):
     def __init__(self, dataset, tokenizer, seq_length=64):
         self.dataset = dataset
         self.tokenizer = tokenizer
@@ -36,8 +36,8 @@ class DatasetCreation(Dataset):
                   "segment_embeddings" : segment_embeddings,
                   "mask_ids" : mask_ids,
                   "is_next" : is_next}
-        
-        return output
+        # We convert the values to torch tensors
+        return {key: torch.tensor(value) for key, value in output.items()}
         
     def get_masked(self, sentence):
         # tokens is the corresponding tokenized sentence

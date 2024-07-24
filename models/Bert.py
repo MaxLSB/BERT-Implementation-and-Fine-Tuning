@@ -1,6 +1,6 @@
 import torch
 from encoder import Encoderlayer
-from preProcessing import InputEmbedding
+from utils.preProcessing import InputEmbedding
 
 # 12 Encoder layers (based on the article)
 class BERT(torch.nn.Module):
@@ -44,7 +44,7 @@ class MLM(torch.nn.Module):
     def forward(self, input):
         return self.softmax(self.linear(input))
 
-class BERTPretraining(torch.nn.Module):
+class BERT_NSP_MLM(torch.nn.Module):
     def __init__(self, bert: BERT, vocab_size, d_model=768):
         super().__init__()
         
@@ -52,6 +52,6 @@ class BERTPretraining(torch.nn.Module):
         self.MLM = MLM(vocab_size, d_model)
         self.NSP = NSP(d_model)
         
-    def forward(self, sequence, sequence_label):
-        output = self.bert(sequence, sequence_label)
+    def forward(self, sequence, segment_label):
+        output = self.bert(sequence, segment_label)
         return self.NSP(output), self.MLM(output)

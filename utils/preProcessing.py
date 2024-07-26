@@ -4,11 +4,11 @@ import torch
 import math
 
 class BERTDataset(Dataset):
-    def __init__(self, dataset, tokenizer, seq_length=64):
+    def __init__(self, dataset, tokenizer, seq_length):
         self.dataset = dataset
         self.tokenizer = tokenizer
         self.seq_length = seq_length
-        self.vocab_size = len(self.tokenizer.vocab)
+        self.vocab_size = self.tokenizer.vocab_size
        
     def __len__(self):
         return len(self.dataset)
@@ -98,12 +98,13 @@ class PositionalEmbedding(torch.nn.Module):
 # Initialize the embedding vectors for all the tokens of the vocabulary
 class InputEmbedding(torch.nn.Module):
     # embed_size is the hidden size for BERT : 768 (from the article)
-    def __init__(self, vocab_size, embed_size, seq_len=64, dropout=0.1):
+    def __init__(self, vocab_size, embed_size, seq_len, dropout, device):
         super().__init__()
         
         self.vocab_size = vocab_size
         self.embed_size = embed_size
         self.seq_len = seq_len
+        self.device = device
         
         # Note : self.token(token_index) returns the embedding vector of the token_index
         
@@ -119,8 +120,11 @@ class InputEmbedding(torch.nn.Module):
         # self.token gathers the embedding vectors of all the vocabulary tokens
         # self.segment gathers the embedding vectors of the 3 possible segment labels
         # self.position gathers the positional embedding vectors of the 64 possible positions
+        embedded_token = self.token(sequence).to(self.device)
+        embedded_seg = self.segment(segment_label).to(self.device)
+        embbeded_pos = self.position(sequence).to(self.device)
         
         # The input embedding is the sum of the token embedding, the positional embedding and the segment embedding
-        x = self.token(sequence) + self.segment(segment_label) + self.position(sequence)
+        x = embedded_token + embbeded_pos + embedded_seg
         # We apply dropout to deactivate some embedding features within the embedding vector for each token.
         return self.dropout(x)

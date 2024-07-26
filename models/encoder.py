@@ -1,6 +1,4 @@
 import torch
-from torch.nn.utils import clones
-
 
 # feed forward size should be : 4*hidden_size
 # From 'Attention is all you need' article
@@ -8,10 +6,10 @@ from torch.nn.utils import clones
 # BERT uses dropout of 0.1 on all layers
 
 class Encoderlayer(torch.nn.Module):
-    def __init__(self, d_model=768, nheads=12, d_feed_forward=4*768, dropout=0.1):
+    def __init__(self, d_model, nheads, d_feed_forward, dropout):
         super().__init__()
         
-        self.layernorm = clones(torch.nn.LayerNorm(d_model), 2)
+        self.layernorm = torch.nn.ModuleList([torch.nn.LayerNorm(d_model), torch.nn.LayerNorm(d_model)])
         self.multi_head_attention = torch.nn.MultiheadAttention(d_model, nheads)
         self.feed_forward = torch.nn.Sequential(
             torch.nn.Linear(d_model, d_feed_forward),

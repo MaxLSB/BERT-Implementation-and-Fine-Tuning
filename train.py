@@ -2,17 +2,19 @@ import torch
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 from utils.data_loader import load_data
-from utils.preProcessing import BERTDataset, BERT_NSP_MLM
+from utils.preProcessing import BERTDataset
 from utils.tokenizer_loader import load_tokenizer
-from models.bert import BERT
+from models.bert import BERT, BERT_NSP_MLM
+from utils.model_init import initialize_weights
 
 class BERTTraining:
-    def __init__(self, model, lr=1e-4, weight_decay=0.01, betas=(0.9, 0.999), log_freq=10):
+    def __init__(self, model, lr, weight_decay, betas, log_freq, device):
         self.model = model
         self.lr = lr
         self.weight_decay = weight_decay
         self.betas = betas
         self.log_freq = log_freq
+        self.device = device
 
         # ignore_index=0: ignore 'non masked' and padded tokens during loss calculation
         self.criterion = torch.nn.NLLLoss(ignore_index=0)
@@ -31,11 +33,16 @@ class BERTTraining:
         
         for i, data in data_iter:
             
-            NSP_output, MLM_output = self.model(data["token_embedding"], data["segment_embedding"])
+            token_embedding = data["token_embeddings"].to(self.device)
+            segment_embedding = data["segment_embeddings"].to(self.device)
+            is_next = data["is_next"].to(self.device)
+            mask_ids = data["mask_ids"].to(self.device)
+             
+            NSP_output, MLM_output = self.model(token_embedding, segment_embedding)
 
-            NSP_loss = self.criterion(NSP_output, data["is_next"])
+            NSP_loss = self.criterion(NSP_output, is_next)
             # (batch_size,vocab_size,seq_len) 
-            MLM_loss = self.criterion(MLM_output.transpose(1,2), torch.tensor(data["mask_ids"]))
+            MLM_loss = self.criterion(MLM_output.transpose(1,2), torch.tensor(mask_ids))
     
             loss = NSP_loss + MLM_loss
             avg_loss += loss.item()
@@ -44,9 +51,9 @@ class BERTTraining:
             loss.backward()
             self.optimizer.step()
                 
-            correct_NSP = NSP_output.argmax(dim=-1).eq(data["is_next"]).sum().item()
+            correct_NSP = NSP_output.argmax(dim=-1).eq(is_next).sum().item()
             total_correct_NSP += correct_NSP
-            total_element_NSP += data["is_next"].nelement()
+            total_element_NSP += is_next.nelement()
             
             # correct = MLM_output.argmax(dim=-1).eq(torch.tensor(data["mask_ids"])).sum().item()
             # total_correct_MLM += correct
@@ -58,17 +65,18 @@ class BERTTraining:
         print(f"Epoch {epoch} | AvgLoss {avg_loss / len(data_loader)} | Accuracy {total_correct_NSP/total_element_NSP * 100}")
         
 
-def main(epochs, batch_size, d_model, n_heads):
+def main(epochs, batch_size, d_model, n_heads, dropout, n_encoder_layers, seq_len, device, path_data, path_tokenizer):
     
-    dataset = load_data()
-    tokenizer = load_tokenizer
+    dataset = load_data(path_data)
+    tokenizer = load_tokenizer(path_tokenizer)
     vocab_size = tokenizer.vocab_size
     
-    train_data = BERTDataset(dataset, seq_len=64, tokenizer=tokenizer)
+    train_data = BERTDataset(dataset, tokenizer, seq_len)
     train_loader = DataLoader(train_data, batch_size, shuffle=True)
-    model = BERT(vocab_size, d_model, n_heads, dropout, n_encoder_layers)
-    bert = BERT_NSP_MLM(model, vocab_size, d_model)
-    trainer = BERTTraining(bert, train_data, None, lr=1e-4, weight_decay=0.01, betas=(0.9, 0.999), warmup_steps=10000, log_freq=10)
+    model = BERT(vocab_size, d_model, n_heads, dropout, n_encoder_layers, seq_len, device).to(device)
+    bert = BERT_NSP_MLM(model, vocab_size, d_model).to(device)
+    bert.apply(initialize_weights)
+    trainer = BERTTraining(bert, lr=1e-4, weight_decay=0.01, betas=(0.9, 0.999), log_freq=10, device=device)
     
 
     for epoch in range(epochs):
@@ -79,11 +87,16 @@ def main(epochs, batch_size, d_model, n_heads):
         
 if __name__ == "__main__":
     
-    epochs = 10
+    # BERT-Tiny
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    epochs = 1
     batch_size = 32
-    d_model = 768
-    n_heads = 12
+    d_model = 128
+    n_heads = 2
     dropout = 0.1
-    n_encoder_layers = 12
+    n_encoder_layers = 4
+    seq_len = 64
+    path_data = "data/processed_data.json"
+    path_tokenizer = "tokenizers/vocab.txt"
     
-    main(epochs, batch_size, d_model, n_heads, dropout, n_encoder_layers)
+    main(epochs, batch_size, d_model, n_heads, dropout, n_encoder_layers, seq_len, device, path_data, path_tokenizer)

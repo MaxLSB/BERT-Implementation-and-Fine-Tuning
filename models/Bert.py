@@ -12,31 +12,33 @@ class BERT(torch.nn.Module):
         self.n_encoder_layers = n_encoder_layers
         self.d_feed_forward = d_model*4
         self.device = device
+        self.seq_len = seq_len
         
         self.Encoder = torch.nn.ModuleList([Encoderlayer(self.d_model, self.nheads, self.d_feed_forward, self.dropout) for _ in range(self.n_encoder_layers)])
-        self.embedding = InputEmbedding(self.vocab_size, self.d_model, seq_len, self.dropout, device)
+        self.embedding = InputEmbedding(self.vocab_size, self.d_model, self.seq_len, self.dropout, device)
         
     def forward(self, sequence, segment_label):
-        # sequence shape is (batch_size, seq_len=max_len=64)
-        mask = (sequence > 0) # mask is True for all elements of the sequence that are not padding
-        print(mask.shape)
+        # sequence shape is (batch_size, seq_len=max_len)
+        mask = (sequence == 0) # mask is True for all elements of the sequence that are not padding
         sequence = self.embedding(sequence, segment_label)
+        # print(f'The sequence after embedding is : {sequence}')
         for encoderlayer in self.Encoder:
             sequence = encoderlayer(sequence, mask)
         return sequence
     
 # Reminder : The training loss is the sum of the mean masked LM likelihood and the mean next sentence prediction likelihood.
 class NSP(torch.nn.Module):
-    def __init__(self, d_model=768):
+    def __init__(self, d_model):
         super().__init__()
         self.linear = torch.nn.Linear(d_model, 2)
         self.softmax = torch.nn.LogSoftmax(dim=-1)
         
     def forward(self, input):
-        return self.softmax(self.linear(input))
+        # We take only the CLS token for classification
+        return self.softmax(self.linear(input[:, 0]))
 
 class MLM(torch.nn.Module):
-    def __init__(self, vocab_size, d_model=768):
+    def __init__(self, vocab_size, d_model):
         super().__init__()
         self.linear = torch.nn.Linear(d_model, vocab_size)
         self.softmax = torch.nn.LogSoftmax(dim=-1)

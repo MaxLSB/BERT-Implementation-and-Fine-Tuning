@@ -10,7 +10,7 @@ class Encoderlayer(torch.nn.Module):
         super().__init__()
         
         self.layernorm = torch.nn.ModuleList([torch.nn.LayerNorm(d_model), torch.nn.LayerNorm(d_model)])
-        self.multi_head_attention = torch.nn.MultiheadAttention(d_model, nheads)
+        self.multi_head_attention = torch.nn.MultiheadAttention(d_model, nheads, batch_first=True)
         self.feed_forward = torch.nn.Sequential(
             torch.nn.Linear(d_model, d_feed_forward),
             torch.nn.GELU(),
@@ -19,7 +19,8 @@ class Encoderlayer(torch.nn.Module):
         self.dropout = torch.nn.Dropout(dropout)
         
     def forward(self, input, mask):
-        output = self.dropout(self.multi_head_attention(input, input, input, mask, need_weights=False))
+        output, _ = self.multi_head_attention(input, input, input, key_padding_mask=mask)
+        output = self.dropout(output)
         output = self.layernorm[0](output + input)
         input = output
         output = self.dropout(self.feed_forward(output))

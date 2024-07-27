@@ -2,6 +2,7 @@ import random
 from torch.utils.data import Dataset
 import torch
 import math
+import time
 
 class BERTDataset(Dataset):
     def __init__(self, dataset, tokenizer, seq_length):
@@ -120,11 +121,14 @@ class InputEmbedding(torch.nn.Module):
         # self.token gathers the embedding vectors of all the vocabulary tokens
         # self.segment gathers the embedding vectors of the 3 possible segment labels
         # self.position gathers the positional embedding vectors of the 64 possible positions
+        
         embedded_token = self.token(sequence).to(self.device)
         embedded_seg = self.segment(segment_label).to(self.device)
         embbeded_pos = self.position(sequence).to(self.device)
         
+        #Issue comes from token and segment embedding
         # The input embedding is the sum of the token embedding, the positional embedding and the segment embedding
         x = embedded_token + embbeded_pos + embedded_seg
+        
         # We apply dropout to deactivate some embedding features within the embedding vector for each token.
         return self.dropout(x)

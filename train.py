@@ -18,8 +18,7 @@ class BERTTraining:
         self.device = device
 
         # ignore_index=0: ignore 'non masked' and padded tokens during loss calculation
-        self.criterionNSP = torch.nn.NLLLoss()
-        self.criterionMLM = torch.nn.NLLLoss(ignore_index=0)
+        self.criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
         self.optimizer = Adam(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay, betas=self.betas)
         
         print("Number of Parameters:", sum([p.nelement() for p in self.model.parameters()]))
@@ -41,11 +40,11 @@ class BERTTraining:
             mask_ids = data["mask_ids"].to(self.device)
 
             NSP_output, MLM_output = self.model(token_embedding, segment_embedding)
-            
-            NSP_loss = self.criterionNSP(NSP_output, is_next)
+   
+            NSP_loss = self.criterion(NSP_output, is_next)
             
             # (batch_size,vocab_size,seq_len) 
-            MLM_loss = self.criterionMLM(MLM_output.transpose(1,2), mask_ids).float().mean()
+            MLM_loss = self.criterion(MLM_output.transpose(1,2), mask_ids).float().mean()
             loss = NSP_loss + MLM_loss
             avg_loss += loss.item()
             
@@ -81,7 +80,7 @@ def main(epochs, batch_size, d_model, n_heads, dropout, n_encoder_layers, seq_le
     train_loader = DataLoader(train_data, batch_size, shuffle=True)
     model = BERT(vocab_size, d_model, n_heads, dropout, n_encoder_layers, seq_len, device).to(device)
     bert = BERT_NSP_MLM(model, vocab_size, d_model).to(device)
-    # bert.apply(initialize_weights)
+    bert.apply(initialize_weights)
     trainer = BERTTraining(bert, lr=1e-3, weight_decay=0.01, betas=(0.9, 0.999), log_freq=500 , device=device)
     
 

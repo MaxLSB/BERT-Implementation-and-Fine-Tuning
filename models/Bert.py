@@ -31,20 +31,18 @@ class NSP(torch.nn.Module):
     def __init__(self, d_model):
         super().__init__()
         self.linear = torch.nn.Linear(d_model, 2)
-        self.softmax = torch.nn.LogSoftmax(dim=-1)
         
     def forward(self, input):
         # We take only the CLS token for classification
-        return self.softmax(self.linear(input[:, 0]))
+        return self.linear(input[:, 0])
 
 class MLM(torch.nn.Module):
     def __init__(self, vocab_size, d_model):
         super().__init__()
         self.linear = torch.nn.Linear(d_model, vocab_size)
-        self.softmax = torch.nn.LogSoftmax(dim=-1)
         
     def forward(self, input):
-        return self.softmax(self.linear(input))
+        return self.linear(input)
 
 class BERT_NSP_MLM(torch.nn.Module):
     def __init__(self, bert: BERT, vocab_size, d_model):

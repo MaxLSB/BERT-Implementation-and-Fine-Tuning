@@ -8,6 +8,8 @@ I re-implemented BERT from scratch using the paper as a reference. I trained a c
 
 To complete the process, I fine-tuned the pre-trained BERT model available on Hugging Face for emotion classification on a dataset of 30,000 posts, achieving 95% accuracy. I deployed this model using Streamlit.
 
+_(Please check: notebook.ipynb)_
+
 # Installation ✨
 
 Use a dedicated environnement to install the librairies.

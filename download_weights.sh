@@ -6,6 +6,6 @@ url="https://www.dropbox.com/scl/fi/nwrim7ssxxzqukuv02y3c/bert_emotion_classifie
 
 filename="bert_emotion_classifier.pth"
 
-curl -L -o "examples/${filename}" "${url}"
+curl -L -o "trained_model/${filename}" "${url}"
 
 echo "Downloaded the model weights to /trained_model/"

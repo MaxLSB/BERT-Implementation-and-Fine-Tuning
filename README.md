@@ -28,7 +28,7 @@ pip install -r requirements.txt
 # Streamlit server
 
 <div align="center">
-  <img src="assets/app.png" alt="Example" width="800" />
+  <img src="assets/streamlit-app.png" alt="Example" width="800" />
 </div>
 
 You can access and test the model here:

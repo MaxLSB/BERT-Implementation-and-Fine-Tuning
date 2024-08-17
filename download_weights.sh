@@ -2,7 +2,7 @@
 
 mkdir -p trained_model
 
-url="https://www.dropbox.com/scl/fi/nwrim7ssxxzqukuv02y3c/bert_emotion_classifier.pth?rlkey=8s9g1rtryz3g4mvdni953bksw&st=j7swq1jq&dl=0"
+url="https://www.dropbox.com/scl/fi/yhkhxtxq9qggfcci7j535/bert_emotion_classifier.pth?rlkey=pf5dnuzw6bjhtet4fx0te1jep&st=h9e3frps&dl=1"
 
 filename="bert_emotion_classifier.pth"
 

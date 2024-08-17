@@ -3,12 +3,27 @@ import torch
 from transformers import AutoModel, BertTokenizer
 from models.classifier import EmotionClassifier
 import torch.nn.functional as F
+import requests
+from io import BytesIO
 
-def model_load(path):
+# Load model and tokenizer once and reuse
+@st.cache_resource  # Cache the model and tokenizer to avoid reloading
+def load_model_and_tokenizer():
+    url = "https://www.dropbox.com/scl/fi/yhkhxtxq9qggfcci7j535/bert_emotion_classifier.pth?rlkey=pf5dnuzw6bjhtet4fx0te1jep&st=h9e3frps&dl=1"
+    
+    # Download the model weights
+    response = requests.get(url)
+    response.raise_for_status()
+    model_weights = BytesIO(response.content)
+
+    # Initialize the model and tokenizer
     bert = AutoModel.from_pretrained('bert-base-uncased')
     model = EmotionClassifier(bert, 6)
-    model.load_state_dict(torch.load(path))
-    return model
+    model.load_state_dict(torch.load(model_weights))
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    model.eval()
+    return model, tokenizer
 
 def emotion(output):
     emotions = {
@@ -24,57 +39,42 @@ def emotion(output):
 def main():
     st.set_page_config(page_title="Emotion Classifier", page_icon=":smiley:", layout="centered")
     
-    with st.expander('Model', expanded=True):
-        
-        
-        st.title('BERT Emotion Classifier 📝')
-        st.caption('By Maxence Lasbordes')
-        
-        user_input = st.text_input("Enter your text here:", placeholder="I am absolutely thrilled about the upcoming trip to Paris!", max_chars=128)
-        
-        # Load the model
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        path = 'trained_model/bert_emotion_classifier.pth'
-        
-        try:
-            model = model_load(path).to(device)
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        except Exception as e:
-            st.error(f"Error loading model: {e}")
-            return
-        # If the user has entered a text
-        if user_input:
-            with st.spinner('Analyzing...'):
-                input_encoding = tokenizer(user_input, truncation=True, max_length=128, return_tensors='pt').to(device)
-                
-                logits = model(input_encoding['input_ids'], input_encoding['attention_mask'])
-                probs = F.softmax(logits, dim=1)
-                predicted_class = torch.argmax(probs, 1)
-                predicted_emotion = emotion(predicted_class)
-                
-                # Display the results   
-                st.markdown(
-                f'''
-                <div style="background-color: #303030; text-align: center; padding: 10px; border-radius: 5px;">
-                    <h2 style="font-weight: bold; margin: 0; color: #e0e0e0;">{predicted_emotion}</h2>
-                </div>
-                ''',
-                unsafe_allow_html=True
-                )
-                
-                # Display the probability
-                st.markdown(
-                f'''
-                <div style="padding-top: 20px;">
-                    <p style="font-style: italic;">Probability: {probs[0][predicted_class].item() * 100:.2f} %</p>
-                </div>
-                ''',
-                unsafe_allow_html=True
-                )
-                
-        st.write("---")
-        st.write("### About")
-        st.write("This app uses a pre-trained BERT model to classify emotions based on text input. The model is trained to recognize various emotions such as sadness, joy, love, anger, fear, and surprise.")
+    model, tokenizer = load_model_and_tokenizer()
+    
+    st.image('assets/streamlit-banner.png', use_column_width=True)
+    st.header('BERT Emotion Classifier 📝')
+    
+    user_input = st.text_input("Enter your text here:", placeholder="I am absolutely thrilled about the upcoming trip to Paris!", max_chars=128)
+    
+    if user_input:
+        with st.spinner('Analyzing...'):
+            input_encoding = tokenizer(user_input, truncation=True, max_length=128, return_tensors='pt')
+            input_ids = input_encoding['input_ids']
+            attention_mask = input_encoding['attention_mask']
+            
+            # use the appropriate device
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model.to(device)
+            input_ids = input_ids.to(device)
+            attention_mask = attention_mask.to(device)
+            
+            with torch.no_grad():
+                logits = model(input_ids, attention_mask)
+            
+            probs = F.softmax(logits, dim=1)
+            predicted_class = torch.argmax(probs, 1)
+            predicted_emotion = emotion(predicted_class)
+            
+            # Display the result   
+            st.success(f"Predicted emotion: {predicted_emotion}")
+            # Display the probability
+            st.info(f"Confidence: {probs[0][predicted_class].item() * 100:.2f} %")
+            
+    st.write("---")
+    st.write("### About")
+    st.write("This app uses a fine-tuned BERT model to classify emotions based on text input. The model is trained to recognize 6 different emotions: sadness, joy, love, anger, fear, and surprise.")
 
+    st.caption('By Maxence Lasbordes')
+    
 if __name__ == '__main__':
     main()

@@ -44,7 +44,7 @@ def main():
     st.image('assets/streamlit-banner.png', use_column_width=True)
     st.header('BERT Emotion Classifier 📝')
     
-    user_input = st.text_input("Enter your text here:", placeholder="I am absolutely thrilled about the upcoming trip to Paris!", max_chars=128)
+    user_input = st.text_input("Enter your text here (english only):", placeholder="I am absolutely thrilled about the upcoming trip to Paris!", max_chars=128)
     
     if user_input:
         with st.spinner('Analyzing...'):

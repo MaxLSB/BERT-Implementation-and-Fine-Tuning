@@ -19,7 +19,7 @@ def load_model_and_tokenizer():
     # Initialize the model and tokenizer
     bert = AutoModel.from_pretrained('bert-base-uncased')
     model = EmotionClassifier(bert, 6)
-    model.load_state_dict(torch.load(model_weights))
+    model.load_state_dict(torch.load(model_weights, map_location=torch.device('cpu')))
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     model.eval()

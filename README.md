@@ -8,7 +8,9 @@ I re-implemented BERT from scratch using the paper as a reference. I trained a c
 
 To complete the process, I fine-tuned the pre-trained BERT model available on Hugging Face for emotion classification on a dataset of 30,000 posts, achieving 95% accuracy. I deployed this model using Streamlit.
 
-_(Please check: notebook.ipynb)_
+**You can access and test the model [here](https://bert-emotion-classification.streamlit.app/)**
+
+_(Please also check: notebook.ipynb)_
 
 # Installation ✨
 
@@ -23,19 +25,14 @@ Install the requirements for the app:
 pip install -r requirements.txt
 ```
 
-# Streamlit local server 
+# Streamlit server
 
 <div align="center">
   <img src="assets/app.png" alt="Example" width="800" />
 </div>
 
-Download the weights of the emotion classifier model:
+You can access and test the model here:
 ```
-bash download_weights.sh
-```
-Launch the streamlit local server:
-```
-streamlit run app.py
+https://bert-emotion-classification.streamlit.app/
 ```
 
-_(Scripts must be executed from the root folder of the project, be careful about the paths!)_

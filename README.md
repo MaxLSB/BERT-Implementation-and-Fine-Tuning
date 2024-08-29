@@ -74,10 +74,10 @@ python train_tokenizer.py
 BERT model for pre-training (NSP + MLM) and classifier for finetuning:
 ```
 ├── models
-|    ├── bert.py
-|    ├── classifier.py
-|    ├── encoder.py
-|    └── __init__.py
+     ├── bert.py
+     ├── classifier.py
+     ├── encoder.py
+     └── __init__.py
 ```
 Dataset used as reference to build and pre-train the BERT model:
 ```

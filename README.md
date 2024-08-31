@@ -98,4 +98,5 @@ You can access and test the model here:
 ```
 https://bert-emotion-classification.streamlit.app/
 ```
+_(Note: The model has been fine-tuned on an english dataset, so results on other languages are very bad.)_
 

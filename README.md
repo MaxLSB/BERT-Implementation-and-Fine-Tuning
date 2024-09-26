@@ -51,7 +51,7 @@ _(Please also check: notebook.ipynb)_
      └── __init__.py
 ```
 
-# Installation ✨
+# Installation
 
 Use a dedicated environnement to install the librairies.
 
